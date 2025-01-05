@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/auth"
@@ -46,5 +47,27 @@ func (cfg *apiConfig) middlewareVideo(h videoHandler) http.HandlerFunc {
 		}
 
 		h(w, r, user, video)
+	}
+}
+
+type StatusCodeResponseWriter struct {
+	http.ResponseWriter
+	StatusCode int
+}
+
+func NewStatusCodeResponseWriter(w http.ResponseWriter) *StatusCodeResponseWriter {
+	return &StatusCodeResponseWriter{ResponseWriter: w}
+}
+
+func (w *StatusCodeResponseWriter) WriteHeader(statusCode int) {
+	w.ResponseWriter.WriteHeader(statusCode)
+	w.StatusCode = statusCode
+}
+
+func middlewareLogger(h http.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		wr := NewStatusCodeResponseWriter(w)
+		h.ServeHTTP(wr, r)
+		log.Println(r.Method, r.URL.Path, wr.StatusCode)
 	}
 }
