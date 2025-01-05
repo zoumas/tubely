@@ -25,8 +25,8 @@ type apiConfig struct {
 }
 
 type thumbnail struct {
-	data      []byte
 	mediaType string
+	data      []byte
 }
 
 var videoThumbnails = map[uuid.UUID]thumbnail{}
@@ -115,7 +115,7 @@ func main() {
 	mux.HandleFunc("POST /api/users", cfg.handlerUsersCreate)
 
 	mux.HandleFunc("POST /api/videos", cfg.handlerVideoMetaCreate)
-	mux.HandleFunc("POST /api/thumbnail_upload/{videoID}", cfg.handlerUploadThumbnail)
+	mux.HandleFunc("POST /api/thumbnail_upload/{videoID}", cfg.middlewareVideo(cfg.handlerUploadThumbnail))
 	mux.HandleFunc("POST /api/video_upload/{videoID}", cfg.handlerUploadVideo)
 	mux.HandleFunc("GET /api/videos", cfg.handlerVideosRetrieve)
 	mux.HandleFunc("GET /api/videos/{videoID}", cfg.handlerVideoGet)
