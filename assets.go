@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"mime"
 	"mime/multipart"
 	"os"
 	"strings"
@@ -14,8 +16,15 @@ func (cfg apiConfig) ensureAssetsDir() error {
 	return nil
 }
 
-func getFileExtension(h *multipart.FileHeader) (string, error) {
-	mediaType := h.Header.Get("Content-Type")
+func getImageFileExtension(h *multipart.FileHeader) (string, error) {
+	contentType := h.Header.Get("Content-Type")
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return "", err
+	}
+	if mediaType != "image/png" && mediaType != "image/jpg" {
+		return "", fmt.Errorf("unsupported media type %s", mediaType)
+	}
 	fields := strings.Split(mediaType, "/")
 	if len(fields) != 2 {
 		return "", errors.New("malformed Content-Type header")
