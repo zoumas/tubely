@@ -29,7 +29,7 @@ func (cfg *apiConfig) handlerUploadThumbnail(w http.ResponseWriter, r *http.Requ
 	}
 	defer file.Close()
 
-	ext, err := getImageFileExtension(header)
+	ext, err := getImageExtension(header)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "parsing media type", err)
 		return

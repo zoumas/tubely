@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/database"
 	"github.com/google/uuid"
 
@@ -13,6 +16,7 @@ import (
 )
 
 type apiConfig struct {
+	s3Client         *s3.Client
 	db               database.Client
 	jwtSecret        string
 	platform         string
@@ -84,7 +88,27 @@ func main() {
 		log.Fatal("PORT environment variable is not set")
 	}
 
+	awsconfig, err := config.LoadDefaultConfig(context.Background())
+	if err != nil {
+		log.Fatalln("loading default aws config", err)
+	}
+
+	s3Client := s3.NewFromConfig(awsconfig)
+
+	// log.Println("s3 client on region", s3Client.Options().Region)
+	// log.Println(s3Region)
+	// listBuckets, err := s3Client.ListBuckets(context.Background(), nil)
+	// if err != nil {
+	// 	log.Fatalln("list buckets", err)
+	// }
+	// for _, b := range listBuckets.Buckets {
+	// 	if b.Name != nil {
+	// 		fmt.Println(*b.Name)
+	// 	}
+	// }
+
 	cfg := apiConfig{
+		s3Client:         s3Client,
 		db:               db,
 		jwtSecret:        jwtSecret,
 		platform:         platform,
@@ -116,7 +140,7 @@ func main() {
 
 	mux.HandleFunc("POST /api/videos", cfg.handlerVideoMetaCreate)
 	mux.HandleFunc("POST /api/thumbnail_upload/{videoID}", cfg.middlewareVideo(cfg.handlerUploadThumbnail))
-	mux.HandleFunc("POST /api/video_upload/{videoID}", cfg.handlerUploadVideo)
+	mux.HandleFunc("POST /api/video_upload/{videoID}", cfg.middlewareVideo(cfg.handlerUploadVideo))
 	mux.HandleFunc("GET /api/videos", cfg.handlerVideosRetrieve)
 	mux.HandleFunc("GET /api/videos/{videoID}", cfg.handlerVideoGet)
 	mux.HandleFunc("DELETE /api/videos/{videoID}", cfg.handlerVideoMetaDelete)
