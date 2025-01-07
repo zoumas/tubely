@@ -53,11 +53,11 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request,
 		respondWithError(w, http.StatusInternalServerError, "creating temp file", err)
 		return
 	}
-	// defer func() {
-	// 	if err := os.Remove(temp.Name()); err != nil {
-	// 		log.Println(err)
-	// 	}
-	// }()
+	defer func() {
+		if err := os.Remove(temp.Name()); err != nil {
+			log.Println(err)
+		}
+	}()
 	defer func() {
 		if err := temp.Close(); err != nil {
 			log.Println(err)
@@ -76,7 +76,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request,
 
 	name, err := processVideoForFastStart(temp.Name())
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, err.Error(), err)
+		respondWithError(w, http.StatusInternalServerError, "prossesing video for fast start", err)
 		return
 	}
 
@@ -85,6 +85,7 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request,
 		respondWithError(w, http.StatusInternalServerError, err.Error(), err)
 		return
 	}
+	defer os.Remove(processedFile.Name())
 	defer processedFile.Close()
 
 	log.Println(processedFile.Name())
@@ -114,7 +115,8 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	videoURL := fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", cfg.s3Bucket, cfg.s3Region, s3key)
+	videoURL := fmt.Sprintf("https://%s/%s", cfg.s3CfDistribution, s3key)
+	log.Println(videoURL)
 	video.VideoURL = &videoURL
 	if err := cfg.db.UpdateVideo(video); err != nil {
 		respondWithError(w, http.StatusInternalServerError, "updating video url", err)
